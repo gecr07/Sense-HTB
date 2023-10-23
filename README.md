@@ -40,6 +40,18 @@ searchsploit -m # mueve
 
 ```
 
+En el txt encontramos el usuario
+
+```
+####Support ticket###
+
+Please create the following user
+
+
+username: Rohit # cambiamos esta a minuscula rohit y como nos dice el defualt password ponermos el pfsense y listo!
+password: company defaults
+```
+
 ## RCE
 
 Para buscar exploits aprendimos una cosa nueva poner entre comillas el cve por ejemplo: "CVE-2016-10709" (or Google will return others)
